@@ -8,11 +8,14 @@ import { homedir } from "os";
 // Get Claude Code CLI path for packaged app
 export function getClaudeCodePath(): string | undefined {
   if (app.isPackaged) {
+    // For packaged apps, the SDK needs the explicit path to the CLI
+    // The path should point to the unpackaged asar.unpacked directory
     return join(
       process.resourcesPath,
       'app.asar.unpacked/node_modules/@anthropic-ai/claude-agent-sdk/cli.js'
     );
   }
+  // In development, return undefined to let the SDK find the CLI via PATH
   return undefined;
 }
 
@@ -41,7 +44,6 @@ export function getEnhancedEnv(): Record<string, string | undefined> {
   };
 }
 
-export const claudeCodePath = getClaudeCodePath();
 export const enhancedEnv = getEnhancedEnv();
 
 // 从用户输入中提取标题的辅助函数
@@ -57,26 +59,16 @@ function extractTitleFromInput(userIntent: string): string {
 export const generateSessionTitle = async (userIntent: string | null) => {
   if (!userIntent) return "New Session";
 
-  try {
-    // 获取当前配置
-    const config = getCurrentApiConfig();
-    
-    // 使用 Anthropic SDK
-    const env = buildEnvForConfig(config);
-    const model = config?.model || process.env.ANTHROPIC_MODEL || "claude-3-5-sonnet-20241022";
-    
-    // 合并环境变量
-    const mergedEnv = {
-      ...enhancedEnv,
-      ...env
-    };
+  // Get the Claude Code path when needed, not at module load time
+  const claudeCodePath = getClaudeCodePath();
 
+  try {
     const result: SDKResultMessage = await unstable_v2_prompt(
       `please analynis the following user input to generate a short but clearly title to identify this conversation theme:
       ${userIntent}
       directly output the title, do not include any other content`, {
-      model,
-      env: mergedEnv,
+      model: claudeCodeEnv.ANTHROPIC_MODEL,
+      env: enhancedEnv,
       pathToClaudeCodeExecutable: claudeCodePath,
     });
 
@@ -84,13 +76,22 @@ export const generateSessionTitle = async (userIntent: string | null) => {
       return result.result;
     }
 
-    // API 调用成功但返回失败状态，使用降级策略
-    console.warn("[generateSessionTitle] API returned non-success result:", result);
-    return extractTitleFromInput(userIntent);
+    // Log any non-success result for debugging
+    console.error("Claude SDK returned non-success result:", result);
+    return "New Session";
   } catch (error) {
-    // API 调用失败（可能是兼容性问题），使用降级策略
-    console.error("[generateSessionTitle] Failed to generate title via API:", error);
-    console.info("[generateSessionTitle] Falling back to extracted title from user input");
-    return extractTitleFromInput(userIntent);
+    // Enhanced error logging for packaged app debugging
+    console.error("Failed to generate session title:", error);
+    console.error("Claude Code path:", claudeCodePath);
+    console.error("Is packaged:", app.isPackaged);
+    console.error("Resources path:", process.resourcesPath);
+
+    // Return a simple title based on user input as fallback
+    if (userIntent) {
+      const words = userIntent.trim().split(/\s+/).slice(0, 5);
+      return words.join(" ").toUpperCase() + (userIntent.trim().split(/\s+/).length > 5 ? "..." : "");
+    }
+
+    return "New Session";
   }
 };
