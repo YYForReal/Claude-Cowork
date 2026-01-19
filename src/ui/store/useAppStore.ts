@@ -182,13 +182,21 @@ export const useAppStore = create<AppState>((set, get) => ({
       case "session.deleted": {
         const { sessionId } = event.payload;
         const state = get();
-        if (!state.sessions[sessionId]) break;
+
         const nextSessions = { ...state.sessions };
         delete nextSessions[sessionId];
+
+        const nextHistoryRequested = new Set(state.historyRequested);
+        nextHistoryRequested.delete(sessionId);
+
+        const hasRemaining = Object.keys(nextSessions).length > 0;
+
         set({
           sessions: nextSessions,
-          showStartModal: Object.keys(nextSessions).length === 0
+          historyRequested: nextHistoryRequested,
+          showStartModal: !hasRemaining
         });
+
         if (state.activeSessionId === sessionId) {
           const remaining = Object.values(nextSessions).sort(
             (a, b) => (b.updatedAt ?? 0) - (a.updatedAt ?? 0)

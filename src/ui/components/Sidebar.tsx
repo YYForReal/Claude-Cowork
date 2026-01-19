@@ -94,7 +94,7 @@ export function Sidebar({
       <div className="flex flex-col gap-2 overflow-y-auto">
         {sessionList.length === 0 && (
           <div className="rounded-xl border border-ink-900/5 bg-surface px-4 py-5 text-center text-xs text-muted">
-            No sessions yet. Start by sending a prompt.
+            No sessions yet. Click "+ New Task" to start.
           </div>
         )}
         {sessionList.map((session) => (

@@ -274,7 +274,7 @@ function App() {
             {visibleMessages.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-20 text-center">
                 <div className="text-lg font-medium text-ink-700">No messages yet</div>
-                <p className="mt-2 text-sm text-muted">Start a conversation with Claude Code</p>
+                <p className="mt-2 text-sm text-muted">Start a conversation with agent cowork</p>
               </div>
             ) : (
               visibleMessages.map((item, idx) => (
@@ -317,7 +317,7 @@ function App() {
           </div>
         </div>
 
-        <PromptInput sendEvent={sendEvent} onSendMessage={handleSendMessage} />
+        <PromptInput sendEvent={sendEvent} onSendMessage={handleSendMessage} disabled={visibleMessages.length === 0} />
 
         {hasNewMessages && !shouldAutoScroll && (
           <button

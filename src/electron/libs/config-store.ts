@@ -46,22 +46,22 @@ export function saveApiConfig(config: ApiConfig): void {
     const configPath = getConfigPath();
     const userDataPath = app.getPath("userData");
     
-    // 确保目录存在
+    // 确保目录存在 make sure directory exists
     if (!existsSync(userDataPath)) {
       mkdirSync(userDataPath, { recursive: true });
     }
     
-    // 验证配置
+    // 验证配置 validate config
     if (!config.apiKey || !config.baseURL || !config.model) {
       throw new Error("Invalid config: apiKey, baseURL, and model are required");
     }
     
-    // 设置默认 apiType
+    // 设置默认 apiType set default apiType
     if (!config.apiType) {
       config.apiType = "anthropic";
     }
     
-    // 保存配置
+    // 保存配置 save config
     writeFileSync(configPath, JSON.stringify(config, null, 2), "utf8");
     console.info("[config-store] API config saved successfully");
   } catch (error) {
