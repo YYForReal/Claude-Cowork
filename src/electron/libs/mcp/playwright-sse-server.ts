@@ -32,6 +32,11 @@ const DEFAULT_CONFIG: SSEServerConfig = {
     browserMode: "visible",
 };
 
+/** 常量配置 */
+const MAX_LOGS = 100;
+const STARTUP_TIMEOUT_MS = 10000;
+const SHUTDOWN_TIMEOUT_MS = 5000;
+
 /**
  * Playwright SSE Server 管理器
  * 单例模式，确保只有一个持久化的 Server 实例
@@ -45,7 +50,7 @@ export class PlaywrightSSEServer extends EventEmitter {
     private errorMessage?: string;
     private sseUrl?: string;
     private logs: string[] = [];
-    private maxLogs = 100;
+    private readonly maxLogs = MAX_LOGS;
 
     private constructor() {
         super();
@@ -201,7 +206,7 @@ export class PlaywrightSSEServer extends EventEmitter {
                         this.emit("ready", this.sseUrl);
                         resolve(this.sseUrl);
                     }
-                }, 10000);
+                }, STARTUP_TIMEOUT_MS);
 
             } catch (error: any) {
                 this.addLog(`Spawn error: ${error.message}`);
@@ -277,7 +282,7 @@ export class PlaywrightSSEServer extends EventEmitter {
                     this.addLog("Force killing server...");
                     this.serverProcess.kill("SIGKILL");
                 }
-            }, 5000);
+            }, SHUTDOWN_TIMEOUT_MS);
 
             this.serverProcess.once("exit", () => {
                 clearTimeout(timeout);

@@ -126,15 +126,22 @@ export function updatePlaywrightConfig(
     };
 }
 
+
+
 /**
- * 更新 Playwright Server 的浏览器模式（向后兼容）
- * @deprecated 使用 updatePlaywrightConfig 代替
+ * 执行命令并检查是否可用
  */
-export function updatePlaywrightBrowserMode(
-    config: MCPServerConfig,
-    browserMode: MCPBrowserMode
-): MCPServerConfig {
-    return updatePlaywrightConfig(config, browserMode);
+async function checkCommandAvailable(command: string): Promise<{ stdout?: string; error?: Error }> {
+    const { exec } = await import("child_process");
+    const { promisify } = await import("util");
+    const execAsync = promisify(exec);
+
+    try {
+        const result = await execAsync(command);
+        return { stdout: result.stdout };
+    } catch (error) {
+        return { error: error as Error };
+    }
 }
 
 /**
@@ -145,21 +152,17 @@ export async function checkNodeEnvironment(): Promise<{
     version?: string;
     error?: string;
 }> {
-    const { exec } = await import("child_process");
-    const { promisify } = await import("util");
-    const execAsync = promisify(exec);
+    const result = await checkCommandAvailable("node --version");
 
-    try {
-        const { stdout } = await execAsync("node --version");
-        const version = stdout.trim();
-        return { available: true, version };
-    } catch (error) {
-        console.error(error);
+    if (result.error) {
+        console.error("[builtin-servers] Node.js check failed:", result.error.message);
         return {
             available: false,
             error: "Node.js 环境未检测到。请确保已安装 Node.js 并添加到系统 PATH 中。",
         };
     }
+
+    return { available: true, version: result.stdout?.trim() };
 }
 
 /**
@@ -169,20 +172,17 @@ export async function checkNpxAvailable(): Promise<{
     available: boolean;
     error?: string;
 }> {
-    const { exec } = await import("child_process");
-    const { promisify } = await import("util");
-    const execAsync = promisify(exec);
+    const result = await checkCommandAvailable("npx --version");
 
-    try {
-        await execAsync("npx --version");
-        return { available: true };
-    } catch (error) {
-        console.error(error);
+    if (result.error) {
+        console.error("[builtin-servers] npx check failed:", result.error.message);
         return {
             available: false,
             error: "npx 命令不可用。请确保已安装 npm 并添加到系统 PATH 中。",
         };
     }
+
+    return { available: true };
 }
 
 /**

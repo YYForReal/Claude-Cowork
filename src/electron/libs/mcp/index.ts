@@ -61,7 +61,6 @@ export {
     buildPlaywrightArgs,
     getBuiltinServerTemplates,
     isBuiltinServer,
-    updatePlaywrightBrowserMode,
     checkNodeEnvironment,
     checkNpxAvailable,
     preflightPlaywrightCheck,

@@ -76,7 +76,6 @@ export class MCPManager extends EventEmitter {
     public updateConfig(newConfig: MCPConfigState): void {
         this.config = newConfig;
         this.saveConfig();
-        this.emit("config-changed", { type: "config-updated" });
     }
 
     /** 获取已启用的 Servers */
